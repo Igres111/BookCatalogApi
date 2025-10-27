@@ -22,10 +22,10 @@ app.MapGet("/api/books", (
         var books = FakeDataStore.Books
                .Select(book =>
                {
-                   var author = FakeDataStore.Authors.FirstOrDefault(a => a.Id == book.AuthorId);
+                   var author = FakeDataStore.Authors.FirstOrDefault(a => a.ID == book.AuthorID);
                    return new BookDto
                    {
-                       Id = book.Id,
+                       ID = book.ID,
                        Title = book.Title,
                        AuthorName = author?.Name ?? "Unknown",  // Avoid Null reference
                        PublicationYear = book.PublicationYear
@@ -55,17 +55,17 @@ app.MapGet("/api/books", (
 
 app.MapGet("/api/authors/{id}/books", (int id) =>
 {
-    var author = FakeDataStore.Authors.FirstOrDefault(a => a.Id == id);
+    var author = FakeDataStore.Authors.FirstOrDefault(a => a.ID == id);
     if (author == null)
     {
         return Results.NotFound($"Author with ID {id} not found.");
     }
 
     var authorBooks = FakeDataStore.Books
-        .Where(b => b.AuthorId == id)
+        .Where(b => b.AuthorID == id)
         .Select(book => new BookDto
         {
-            Id = book.Id,
+            ID = book.ID,
             Title = book.Title,
             AuthorName = author.Name,
             PublicationYear = book.PublicationYear
@@ -84,22 +84,22 @@ app.MapPost("/api/books", async ([FromBody] CreateBookRequest request, IValidato
         return Results.BadRequest(errors);
     }
 
-    var author = FakeDataStore.Authors.FirstOrDefault(a => a.Id == request.AuthorId);
+    var author = FakeDataStore.Authors.FirstOrDefault(a => a.ID == request.AuthorID);
     if (author == null)
     {
-        return Results.BadRequest($"Author with ID {request.AuthorId} does not exist.");
+        return Results.BadRequest($"Author with ID {request.AuthorID} does not exist.");
     }
 
     var newBook = new Book
     {
-        Id = FakeDataStore.Books.Max(b => b.Id) + 1, // Or generate Id as needed
+        ID = FakeDataStore.Books.Max(b => b.ID) + 1, // Or generate Id as needed
         Title = request.Title,
-        AuthorId = request.AuthorId,
+        AuthorID = request.AuthorID,
         PublicationYear = request.PublicationYear
     };
 
     FakeDataStore.Books.Add(newBook);
-    return Results.Created($"/api/books/{newBook.Id}", newBook);
+    return Results.Created($"/api/books/{newBook.ID}", newBook);
 });
 
 
