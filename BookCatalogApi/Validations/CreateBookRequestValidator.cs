@@ -11,7 +11,7 @@ namespace BookCatalogApi.Validators
                 .NotEmpty().WithMessage("Title is required.")
                 .MinimumLength(2).WithMessage("Title must be at least 2 characters.");
 
-            RuleFor(x => x.AuthorID)
+            RuleFor(x => x.AuthorId)
                 .GreaterThan(0).WithMessage("AuthorID must be greater than zero.");
 
             RuleFor(x => x.PublicationYear)

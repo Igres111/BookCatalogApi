@@ -13,23 +13,43 @@ builder.Services.AddValidatorsFromAssemblyContaining<CreateBookRequestValidator>
 
 var app = builder.Build();
 
-app.MapGet("/api/books", () =>
+app.MapGet("/api/books", (
+    [FromQuery] int? publicationYear,
+    [FromQuery] string? sortBy) =>
 {
-    var books = FakeDataStore.Books
-           .Select(book =>
-           {
-               var author = FakeDataStore.Authors.FirstOrDefault(a => a.Id == book.AuthorId);
-               return new BookDto
+    try
+    {
+        var books = FakeDataStore.Books
+               .Select(book =>
                {
-                   Id = book.Id,
-                   Title = book.Title,
-                   AuthorName = author?.Name ?? "Unknown",  // Avoid null reference
-                   PublicationYear = book.PublicationYear
-               };
-           })
-           .ToList();
+                   var author = FakeDataStore.Authors.FirstOrDefault(a => a.Id == book.AuthorId);
+                   return new BookDto
+                   {
+                       Id = book.Id,
+                       Title = book.Title,
+                       AuthorName = author?.Name ?? "Unknown",  // Avoid Null reference
+                       PublicationYear = book.PublicationYear
+                   };
+               })
+               .AsEnumerable();
 
-    return Results.Ok(books);
+        if (publicationYear.HasValue)     // Check Year Value                                          
+            books = books.Where(b => b.PublicationYear == publicationYear.Value);
+
+        if (!string.IsNullOrWhiteSpace(sortBy) && sortBy.Trim().Equals("title", StringComparison.OrdinalIgnoreCase))   // Check SortBy Value
+            books = books.OrderBy(b => b.Title);
+
+        return Results.Ok(books);
+    }
+    catch (Exception ex)
+    {
+        return Results.BadRequest(
+            new
+            {
+                message = "Invalid request. Please check your query parameters.",
+                error = ex.Message
+            });
+    }
 }
 );
 
