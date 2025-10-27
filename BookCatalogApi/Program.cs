@@ -55,52 +55,73 @@ app.MapGet("/api/books", (
 
 app.MapGet("/api/authors/{id}/books", (int id) =>
 {
-    var author = FakeDataStore.Authors.FirstOrDefault(a => a.ID == id);
-    if (author == null)
+    try
     {
-        return Results.NotFound($"Author with ID {id} not found.");
-    }
-
-    var authorBooks = FakeDataStore.Books
-        .Where(b => b.AuthorID == id)
-        .Select(book => new BookDto
+        var author = FakeDataStore.Authors.FirstOrDefault(a => a.ID == id);
+        if (author == null)
         {
-            ID = book.ID,
-            Title = book.Title,
-            AuthorName = author.Name,
-            PublicationYear = book.PublicationYear
-        })
-        .ToList();
+            return Results.NotFound($"Author with ID {id} not found.");
+        }
 
-    return Results.Ok(authorBooks);
+        var authorBooks = FakeDataStore.Books
+            .Where(b => b.AuthorID == id)
+            .Select(book => new BookDto
+            {
+                ID = book.ID,
+                Title = book.Title,
+                AuthorName = author.Name,
+                PublicationYear = book.PublicationYear
+            })
+            .ToList();
+
+        return Results.Ok(authorBooks);
+    }
+    catch (Exception ex)
+    {
+        return Results.BadRequest(new
+        {
+            message = "Invalid request while retrieving author's books.",
+            error = ex.Message
+        });
+    }
 });
 
 app.MapPost("/api/books", async ([FromBody] CreateBookRequest request, IValidator<CreateBookRequest> validator) =>
 {
-    var validationResult = await validator.ValidateAsync(request); //Implement FluentValidation
-    if (!validationResult.IsValid)
+    try
     {
-        var errors = validationResult.Errors.Select(e => e.ErrorMessage);
-        return Results.BadRequest(errors);
+        var validationResult = await validator.ValidateAsync(request); //Implement FluentValidation
+        if (!validationResult.IsValid)
+        {
+            var errors = validationResult.Errors.Select(e => e.ErrorMessage);
+            return Results.BadRequest(errors);
+        }
+
+        var author = FakeDataStore.Authors.FirstOrDefault(a => a.ID == request.AuthorID);
+        if (author == null)
+        {
+            return Results.BadRequest($"Author with ID {request.AuthorID} does not exist.");
+        }
+
+        var newBook = new Book
+        {
+            ID = FakeDataStore.Books.Max(b => b.ID) + 1, // Or generate Id as needed
+            Title = request.Title,
+            AuthorID = request.AuthorID,
+            PublicationYear = request.PublicationYear
+        };
+
+        FakeDataStore.Books.Add(newBook);
+        return Results.Created($"/api/books/{newBook.ID}", newBook);
     }
-
-    var author = FakeDataStore.Authors.FirstOrDefault(a => a.ID == request.AuthorID);
-    if (author == null)
+    catch (Exception ex)
     {
-        return Results.BadRequest($"Author with ID {request.AuthorID} does not exist.");
+        return Results.BadRequest(new
+        {
+            message = "Invalid request while creating a new book.",
+            error = ex.Message
+        });
     }
-
-    var newBook = new Book
-    {
-        ID = FakeDataStore.Books.Max(b => b.ID) + 1, // Or generate Id as needed
-        Title = request.Title,
-        AuthorID = request.AuthorID,
-        PublicationYear = request.PublicationYear
-    };
-
-    FakeDataStore.Books.Add(newBook);
-    return Results.Created($"/api/books/{newBook.ID}", newBook);
 });
-
 
 app.Run();
