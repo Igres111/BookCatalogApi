@@ -64,17 +64,17 @@ app.MapPost("/api/books", async ([FromBody] CreateBookRequest request, IValidato
         return Results.BadRequest(errors);
     }
 
-    var author = FakeDataStore.Authors.FirstOrDefault(a => a.Id == request.AuthorID);
+    var author = FakeDataStore.Authors.FirstOrDefault(a => a.Id == request.AuthorId);
     if (author == null)
     {
-        return Results.BadRequest($"Author with ID {request.AuthorID} does not exist.");
+        return Results.BadRequest($"Author with ID {request.AuthorId} does not exist.");
     }
 
     var newBook = new Book
     {
         Id = FakeDataStore.Books.Max(b => b.Id) + 1, // Or generate Id as needed
         Title = request.Title,
-        AuthorId = request.AuthorID,
+        AuthorId = request.AuthorId,
         PublicationYear = request.PublicationYear
     };
 
